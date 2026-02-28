@@ -16,7 +16,10 @@ const FileUploader = <T extends FieldValues>({
     placeholder,
     hint,
 }: FileUploadFieldProps<T>) => {
-    const { field: { onChange, value } } = useController({ name, control })
+    const {
+        field: { onChange, value },
+        fieldState: { error }
+    } = useController({ name, control })
 
     const inputRef = useRef<HTMLInputElement>(null)
 
@@ -29,7 +32,7 @@ const FileUploader = <T extends FieldValues>({
 
     const onRemove = useCallback((e: React.MouseEvent) => {
         e.stopPropagation()
-        onChange(null)
+        onChange(undefined)
         if (inputRef.current) {
             inputRef.current.value = ''
         }
@@ -47,6 +50,16 @@ const FileUploader = <T extends FieldValues>({
                         isUploaded && 'upload-dropzone-uploaded'
                     )}
                     onClick={() => !disabled && inputRef.current?.click()}
+                    role='button'
+                    tabIndex={disabled ? -1 : 0}
+                    aria-disabled={disabled}
+                    onKeyDown={(e) => {
+                        if (disabled) return
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            inputRef.current?.click()
+                        }
+                    }}
                 >
                     <input
                         type="file"
@@ -76,6 +89,9 @@ const FileUploader = <T extends FieldValues>({
                     )}
                 </div>
             </FormControl>
+            {error?.message && (
+                <p className='text-sm text-destructive mt-2"'>{error.message}</p>
+            )}
         </FormItem>
     )
 }

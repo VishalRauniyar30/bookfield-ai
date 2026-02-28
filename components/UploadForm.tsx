@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '@clerk/nextjs'
 import { ImageIcon, Upload } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { BookUploadFormValues } from '@/types'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -39,6 +40,15 @@ const UploadForm = () => {
         }
     })
 
+    const onSubmit = async (data: BookUploadFormValues) => {
+        if (!userId) {
+            return toast.error("Please login to upload books")
+        }
+
+        setIsSubmitting(true)
+        // PostHog -> Track Book Uploads...
+    }
+
     if (!isMounted) return null
 
     return (
@@ -47,7 +57,7 @@ const UploadForm = () => {
 
             <div className='new-book-wrapper'>
                 <Form {...form}>
-                    <form className='space-y-8'>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
                         {/* 1. PDF File Upload */}
                         <FileUploader
                             control={form.control}

@@ -139,3 +139,8 @@ export interface EndSessionResult {
     success: boolean;
     error?: string;
 }
+
+declare module "*.css" {
+    const content: Record<string, string>
+    export default content
+}

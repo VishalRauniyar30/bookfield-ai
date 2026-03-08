@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { IBM_Plex_Serif, Mona_Sans } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
 
-//@ts-ignore
+// @ts-ignore
 import './globals.css'
 import { Toaster } from "@/components/ui/sonner"
 import Navbar from "@/components/Navbar"

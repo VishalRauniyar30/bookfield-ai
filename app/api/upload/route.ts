@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
 import { handleUpload, HandleUploadBody } from "@vercel/blob/client"
 
-import { ACCEPTED_IMAGE_TYPES, ACCEPTED_PDF_TYPES, MAX_FILE_SIZE } from "@/lib/constants"
+import { MAX_FILE_SIZE } from "@/lib/constants"
 
 export async function POST(request: Request): Promise<NextResponse> {
     try {
@@ -20,7 +20,7 @@ export async function POST(request: Request): Promise<NextResponse> {
                 }
 
                 return {
-                    allowedContentTypes: [...ACCEPTED_PDF_TYPES, ...ACCEPTED_IMAGE_TYPES],
+                    allowedContentTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
                     addRandomSuffix: true,
                     maximumSizeInBytes: MAX_FILE_SIZE,
                     tokenPayload: JSON.stringify({ userId })

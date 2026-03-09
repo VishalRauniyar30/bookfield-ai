@@ -3,6 +3,8 @@ import HeroSection from "@/components/HeroSection"
 import Search from "@/components/Search"
 import { getAllBooks } from "@/lib/actions/book.actions"
 
+export const dynamic = 'force-dynamic'
+
 export default async function RootHome({ searchParams }: { searchParams: Promise<{ query?: string }> }) {
     const { query } = await searchParams
 

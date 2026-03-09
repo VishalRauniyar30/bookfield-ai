@@ -1,5 +1,8 @@
 'use server'
 
+import { Types } from "mongoose"
+import { revalidatePath } from "next/cache"
+
 import BookSegment from "@/database/models/book-segment.model"
 import Book from "@/database/models/book.model"
 import { connectDB } from "@/database/mongoose"
@@ -108,6 +111,8 @@ export const createBook = async (data: CreateBook) => {
             totalSegments: 0
         })
 
+        revalidatePath('/')
+
         return {
             success: true,
             data: serializeData(book),
@@ -178,3 +183,66 @@ export const saveBookSegments = async (bookId: string, clerkId: string, segments
     }
 }
 
+// Searches book segments using MongoDB text search with regex fallback
+export const searchBookSegments = async (bookId: string, query: string, limit: number = 5) => {
+    try {
+        await connectDB()
+
+        console.log(`Searching for: "${query}" in book ${bookId}`)
+
+        const bookObjId = new Types.ObjectId(bookId)
+
+        // Try MongoDB text search first (requires text index)
+        let segments: Record<string, unknown>[] = []
+
+        try {
+            segments = await BookSegment
+                .find({
+                    bookId: bookObjId,
+                    $text: { $search: query }
+                })
+                .select('_id bookId content segmentIndex pageNumber wordCount')
+                .sort({ score: { $meta: 'textScore' } })
+                .limit(limit)
+                .lean()
+        } catch (error) {
+            segments = []
+        }
+
+        // Fallback: regex search matching ANY keyword
+        if (segments.length === 0) {
+            const keywords = query.split(/\s+/).filter((k) => k.length > 2)
+            const pattern = keywords.map(escapeRegex).join('|')
+
+            if (keywords.length === 0) {
+                return {
+                    success: true,
+                    data: []
+                }
+            }
+
+            segments = await BookSegment
+                .find({
+                    bookId: bookObjId,
+                    content: { $regex: pattern, $options: 'i' }
+                })
+                .select('_id bookId content segmentIndex pageNumber wordCount')
+                .sort({ segmentIndex: 1 })
+                .limit(limit)
+                .lean()
+        }
+        console.log(`Search complete. Found ${segments.length} results`)
+
+        return {
+            success: true,
+            data: serializeData(segments),
+        }
+    } catch (error) {
+        console.error('Error searching segments:', error);
+        return {
+            success: false,
+            error: (error as Error).message,
+            data: [],
+        }
+    }
+}

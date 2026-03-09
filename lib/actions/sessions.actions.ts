@@ -1,11 +1,9 @@
 'use server'
 
-import { revalidatePath } from "next/cache"
 
 import VoiceSession from "@/database/models/voice-session.model"
 import { connectDB } from "@/database/mongoose"
 import { getCurrentBillingPeriodStart, PLAN_LIMITS } from "@/lib/subscription-constants"
-import { getUserPlan } from "@/lib/subscription.server"
 import { EndSessionResult, StartSessionResult } from "@/types"
 
 export const startVoiceSession = async (clerkId: string, bookId: string): Promise<StartSessionResult> => {
@@ -13,37 +11,43 @@ export const startVoiceSession = async (clerkId: string, bookId: string): Promis
         await connectDB()
 
         // Limits/Plan to see whether a session is allowed.
-        const plan = await getUserPlan()
-        const limits = PLAN_LIMITS[plan]
+        // const plan = await getUserPlan()
+        // const limits = PLAN_LIMITS[plan]
+        // const billingPeriodStart = getCurrentBillingPeriodStart()
+
+        // const sessionCount = await VoiceSession.countDocuments({
+        //     clerkId,
+        //     billingPeriodStart
+        // })
+
+        // if (sessionCount >= limits.maxDurationPerSession) {
+        //     revalidatePath('/')
+
+        //     return {
+        //         success: false,
+        //         error: `You have reached the monthly session limit for your ${plan} plan (${limits.maxSessionsPerMonth}). Please upgrade for more sessions.`,
+        //         isBillingError: true,
+        //     }
+        // }
         const billingPeriodStart = getCurrentBillingPeriodStart()
 
-        const sessionCount = await VoiceSession.countDocuments({
-            clerkId,
-            billingPeriodStart
-        })
-
-        if (sessionCount >= limits.maxDurationPerSession) {
-            revalidatePath('/')
-
-            return {
-                success: false,
-                error: `You have reached the monthly session limit for your ${plan} plan (${limits.maxSessionsPerMonth}). Please upgrade for more sessions.`,
-                isBillingError: true,
-            }
-        }
-
-        const session = await VoiceSession.create({
-            clerkId,
-            bookId,
-            startedAt: new Date(),
-            billingPeriodStart,
-            durationSeconds: 0,
-        })
+        const session = await VoiceSession.findOneAndUpdate(
+            { clerkId, billingPeriodStart },
+            {
+                $setOnInsert: {
+                    clerkId,
+                    bookId,
+                    startedAt: new Date(),
+                    billingPeriodStart,
+                    durationSeconds: 0,
+                }
+            },
+            { upsert: true, new: true }
+        )
 
         return {
             success: true,
             sessionId: session._id.toString(),
-            maxDurationMinutes: limits.maxDurationPerSession
         }
 
     } catch (e) {

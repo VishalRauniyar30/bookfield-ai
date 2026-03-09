@@ -93,11 +93,7 @@ export const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
 // Pre-configured VAPI assistant ID (hardcoded for this app)
-const assistantId = process.env.NEXT_PUBLIC_ASSISTANT_ID
-if (!assistantId) {
-    throw new Error("Missing NEXT_PUBLIC_ASSISTANT_ID")
-}
-export const ASSISTANT_ID = assistantId
+export const ASSISTANT_ID = process.env.NEXT_PUBLIC_ASSISTANT_ID!
 
 // 11Labs Voice IDs - Optimized for conversational AI
 // Voices selected for natural, engaging book conversations
